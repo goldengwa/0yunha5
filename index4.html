@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>& 치치</title>
+  <style>
+    :root{ --card-w:360px; }
+    *{ box-sizing:border-box }
+    body{
+      margin:0; padding:0; min-height:100vh;
+      font-family:"Pretendard",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+      display:flex; justify-content:center; align-items:center;
+      background:url("https://i.pinimg.com/1200x/14/79/0b/14790b0e3670fa729b5d9c31d30c0999.jpg") no-repeat center/cover fixed;
+      position:relative;
+    }
+    body::before{ content:""; position:absolute; inset:0; background:rgba(255,255,255,.95); z-index:0 }
+    #content,#loading{ position:relative; z-index:1 }
+
+    /* loading */
+    #loading{
+      position:fixed; inset:0; display:flex; flex-direction:column; gap:10px;
+      justify-content:center; align-items:center; background:rgba(239,244,255,.9);
+      color:#000; font-size:15px; font-weight:600; z-index:1000;
+    }
+    .dot-loader{ display:flex; gap:8px; margin-bottom:6px }
+    .dot-loader span{ width:12px; height:12px; background:#5865F2; border-radius:50%;
+      animation:jump .6s infinite alternate ease-in-out }
+    .dot-loader span:nth-child(2){ animation-delay:.2s }
+    .dot-loader span:nth-child(3){ animation-delay:.4s }
+    @keyframes jump{ from{transform:translateY(0)} to{transform:translateY(-10px)} }
+
+    /* card */
+    #content{
+      display:none; width:var(--card-w); border-radius:16px; overflow:hidden; background:#fff;
+      box-shadow:0 8px 24px rgba(0,0,0,.25); animation:fadeIn 1s ease;
+    }
+    .card-top{
+      background:
+        linear-gradient(135deg, rgba(127,90,240,.2), rgba(255,128,191,.2)),
+        url("https://i.pinimg.com/736x/59/1f/24/591f24da674c3a608a6e6aab23d3e4ed.jpg") center/cover no-repeat;
+      padding:60px 20px 80px; text-align:center; color:#fff; position:relative;
+    }
+    .card-top img{
+      width:110px; height:110px; border-radius:50%; border:4px solid #fff; object-fit:cover;
+      box-shadow:0 4px 12px rgba(0,0,0,.3); position:absolute; bottom:-55px; left:50%;
+      transform:translateX(-50%); background:#fff;
+    }
+    .card-bottom{ padding:70px 25px 30px; text-align:center }
+    .card-bottom h1{ margin:-5px 0 10px; font-size:24px; font-weight:800; color:#111 }
+    .tags{ display:flex; justify-content:center; gap:10px; margin-bottom:15px; flex-wrap:wrap }
+    .tag{ padding:6px 14px; border-radius:20px; font-size:12px; font-weight:700; color:#111 }
+    .tag-blue{ background:#c7d2fe } .tag-yellow{ background:#fde68a }
+    .tag-pink{ background:#fd8a8a } .tag-gray{ background:#e5e7eb }
+
+    .buttons{ display:flex; flex-direction:column; gap:12px; margin-top:15px }
+    .btn{
+      display:block; padding:12px 0; text-align:center; font-size:13px; font-weight:700;
+      color:#111827; background:#f9fafb; border-radius:8px; text-decoration:none;
+      box-shadow:0 2px 6px rgba(0,0,0,.1); transition:all .25s ease; word-break:keep-all;
+    }
+    .btn:hover{ background:#e5e7eb; transform:scale(1.03) }
+
+    @keyframes fadeIn{ from{opacity:0; transform:translateY(20px)} to{opacity:1; transform:translateY(0)} }
+
+    /* floating buttons */
+    .fab{
+      position:fixed; right:16px; bottom:16px; z-index:1200; display:flex; gap:8px; align-items:center;
+    }
+    .fab .settings-toggle, .fab .auth-toggle{
+      width:48px; height:48px; border-radius:50%; border:none; cursor:pointer;
+      background:#111; color:#fff; font-size:22px; line-height:1; box-shadow:0 8px 24px rgba(0,0,0,.25);
+    }
+    .auth-toggle{ background:#4b5563; font-size:18px }
+
+    /* settings panel */
+    .settings-panel{
+      position:fixed; inset:auto 0 0 0; max-height:85vh; background:#fff; z-index:1100;
+      border-radius:16px 16px 0 0; box-shadow:0 -12px 32px rgba(0,0,0,.18);
+      transform:translateY(100%); transition:transform .35s ease;
+    }
+    .settings-panel.open{ transform:translateY(0) }
+    .sp-head{
+      display:flex; align-items:center; justify-content:space-between; gap:8px;
+      padding:14px 16px; border-bottom:1px solid #f0f2f5; position:sticky; top:0; background:#fff; z-index:1;
+    }
+    .sp-title{ font-weight:800; font-size:16px }
+    .sp-body{ padding:14px 16px 18px; overflow:auto; max-height:calc(85vh - 56px) }
+    .grid{ display:grid; grid-template-columns:1fr; gap:10px }
+    .row{ display:grid; grid-template-columns:1fr; gap:8px }
+    .row-2{ display:grid; grid-template-columns:1fr 1fr; gap:8px }
+    .row-3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px }
+    label{ font-size:12px; font-weight:700; color:#374151 }
+    input[type="text"],input[type="url"],input[type="email"],input[type="password"]{
+      width:100%; padding:10px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:14px; background:#fff;
+    }
+    select{ width:100%; padding:10px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:14px; background:#fff }
+    .list{ display:flex; flex-direction:column; gap:8px }
+    .item{ border:1px solid #eef0f3; border-radius:10px; padding:10px; display:grid; gap:8px }
+    .item-head{ display:flex; align-items:center; justify-content:space-between; gap:8px }
+    .item-actions{ display:flex; gap:6px }
+    .btn-small{
+      padding:8px 10px; border:1px solid #e5e7eb; border-radius:8px; background:#fff; cursor:pointer; font-weight:700; font-size:12px;
+    }
+    .btn-primary{ background:#111; color:#fff; border-color:#111 }
+    .btn-danger{ background:#fee2e2; border-color:#fecaca; color:#991b1b }
+    .btn-ghost{ background:#f9fafb }
+    .hr{ height:1px; background:#f0f2f5; margin:10px 0 }
+    .actions{ display:flex; gap:8px; flex-wrap:wrap }
+    .note{ font-size:12px; color:#6b7280 }
+
+    /* auth modal */
+    .modal{ position:fixed; inset:0; background:rgba(0,0,0,.5); display:none; align-items:center; justify-content:center; z-index:1300 }
+    .modal.open{ display:flex }
+    .modal-card{ width:min(480px, 92vw); background:#fff; border-radius:12px; box-shadow:0 10px 28px rgba(0,0,0,.25); padding:16px }
+    .modal-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:8px }
+    .modal-title{ font-weight:800 }
+    .right{ margin-left:auto }
+    .pill{ font-size:12px; padding:4px 8px; border-radius:999px; background:#eef2ff; color:#3730a3; }
+    .auth-row{ display:grid; grid-template-columns:1fr; gap:8px; margin:8px 0 }
+    .auth-actions{ display:flex; gap:8px; justify-content:flex-end; margin-top:8px }
+    .login-hint{ font-size:12px; color:#6b7280 }
+    @media (min-width: 900px){
+      .settings-panel{ left:50%; right:auto; width:560px; margin-left:-280px; border-radius:16px }
+      .sp-body{ max-height:calc(85vh - 56px) }
+    }
+  </style>
+</head>
+<body>
+  <!-- loading -->
+  <div id="loading">
+    <div class="dot-loader"><span></span><span></span><span></span></div>
+    <span id="loadingText">치치를 불러오고 있어요</span>
+  </div>
+
+  <!-- card -->
+  <div id="content" role="main" aria-label="소개 카드">
+    <div class="card-top">
+      <img id="profileImg" src="https://media.discordapp.net/attachments/1400167107915812918/1408907812293050470/22c9f9637ae670ca2668c8e88a5434ba.webp" alt="프로필"/>
+    </div>
+    <div class="card-bottom">
+      <h1 id="displayName">& 치치</h1>
+      <div class="tags" id="tagsWrap"></div>
+      <div class="buttons" id="buttonsWrap"></div>
+    </div>
+  </div>
+
+  <!-- floating buttons -->
+  <div class="fab">
+    <button class="auth-toggle" id="authToggle" title="로그인/로그아웃" aria-label="로그인">👤</button>
+    <button class="settings-toggle" id="settingsToggle" title="설정 열기/닫기" aria-label="설정">⚙️</button>
+  </div>
+
+  <!-- settings panel -->
+  <aside class="settings-panel" id="settingsPanel" aria-label="설정 패널">
+    <div class="sp-head">
+      <div class="sp-title">패널 설정</div>
+      <div class="actions">
+        <span id="sessionPill" class="pill" style="display:none"></span>
+        <button class="btn-small btn-ghost" id="importBtn">가져오기</button>
+        <button class="btn-small btn-ghost" id="exportBtn">내보내기</button>
+        <button class="btn-small btn-danger" id="resetBtn">초기화</button>
+        <button class="btn-small btn-primary" id="saveBtn">저장</button>
+      </div>
+    </div>
+    <div class="sp-body">
+      <div class="grid">
+        <div class="row-2">
+          <div>
+            <label>페이지 타이틀</label>
+            <input id="titleInput" type="text" placeholder="브라우저 탭 제목(선택)"/>
+          </div>
+          <div>
+            <label>로딩 문구</label>
+            <input id="loadingMsgInput" type="text" placeholder="불러오는 동안 보일 문구"/>
+          </div>
+        </div>
+        <div class="row">
+          <label>디스플레이 이름</label>
+          <input id="nameInput" type="text" placeholder="카드에 표시할 이름"/>
+        </div>
+        <div class="row">
+          <label>배경 사진 URL (body)</label>
+          <input id="bgInput" type="url" placeholder="https://..."/>
+        </div>
+        <div class="row">
+          <label>배너 사진 URL (카드 상단)</label>
+          <input id="bannerInput" type="url" placeholder="https://..."/>
+        </div>
+        <div class="row">
+          <label>프로필 사진 URL</label>
+          <input id="profileInput" type="url" placeholder="https://..."/>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="row">
+          <label>태그</label>
+          <div id="tagsList" class="list"></div>
+          <button class="btn-small" id="addTagBtn">+ 태그 추가</button>
+          <div class="note">색상은 선택사항입니다.</div>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="row">
+          <label>버튼</label>
+          <div id="linksList" class="list"></div>
+          <button class="btn-small" id="addLinkBtn">+ 버튼 추가</button>
+          <div class="note">버튼은 “이름 + 링크(URL)”만 입력하면 됩니다.</div>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="row">
+          <label>공유</label>
+          <div class="actions">
+            <button class="btn-small" id="previewBtn">미리보기 적용</button>
+            <button class="btn-small" id="shareLinkBtn">공유 링크 만들기</button>
+            <button class="btn-small" id="saveToAccountBtn">계정에 저장</button>
+            <button class="btn-small" id="loadFromAccountBtn">계정에서 불러오기</button>
+          </div>
+          <div class="note">저장은 이 브라우저(localStorage)에 보관됩니다. 로그인하면 동일 기기에서 자동 복원돼요. 교차 기기는 공유 링크를 사용하세요.</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- templates -->
+  <template id="tagTpl">
+    <div class="item tag-item">
+      <div class="item-head">
+        <strong>태그</strong>
+        <div class="item-actions">
+          <button class="btn-small btn-danger tag-del">삭제</button>
+        </div>
+      </div>
+      <div class="row-2">
+        <div>
+          <label>텍스트</label>
+          <input type="text" class="tag-text" placeholder="예: 치린이집"/>
+        </div>
+        <div>
+          <label>색상</label>
+          <select class="tag-color">
+            <option value="tag-blue">파랑</option>
+            <option value="tag-yellow">노랑</option>
+            <option value="tag-pink">핑크</option>
+            <option value="tag-gray">회색</option>
+          </select>
+        </div>
+      </div>
+    
+      <div class="row">
+        <label>색상 코드 (선택) — HEX 또는 rgb/rgba</label>
+        <input type="text" class="tag-color-code" placeholder="#ff5577 또는 rgb(255,85,119)"/>
+      </div>
+    </div>
+  </template>
+
+  <template id="linkTpl">
+    <div class="item link-item">
+      <div class="item-head">
+        <strong>버튼</strong>
+        <div class="item-actions">
+          <button class="btn-small btn-danger link-del">삭제</button>
+        </div>
+      </div>
+      <div class="row">
+        <label>버튼 이름</label>
+        <input type="text" class="link-label" placeholder="예: 신고문의"/>
+      </div>
+      <div class="row">
+        <label>연결 링크(URL)</label>
+        <input type="url" class="link-url" placeholder="https://example.com"/>
+      </div>
+    </div>
+  </template>
+
+  <!-- auth modal -->
+  <div class="modal" id="authModal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+      <div class="modal-head">
+        <div class="modal-title" id="authTitle">로그인 / 회원가입</div>
+        <button class="btn-small btn-ghost" id="authClose">닫기</button>
+      </div>
+      <div class="auth-row">
+        <label>이메일</label>
+        <input id="authEmail" type="email" placeholder="you@example.com" autocomplete="email"/>
+      </div>
+      <div class="auth-row">
+        <label>비밀번호</label>
+        <input id="authPw" type="password" placeholder="8자 이상" autocomplete="current-password"/>
+      </div>
+      <div class="login-hint">처음 로그인하면 해당 이메일로 계정이 생성됩니다(로컬 저장).</div>
+      <div class="auth-actions">
+        <button class="btn-small" id="logoutBtn" style="display:none">로그아웃</button>
+        <button class="btn-small btn-primary" id="loginBtn">로그인</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  // --------- 기본값 ----------
+  const DEFAULTS = {
+    pageTitle: "& 치치",
+    loadingText: "치치를 불러오고 있어요",
+    backgroundUrl: "https://i.pinimg.com/1200x/14/79/0b/14790b0e3670fa729b5d9c31d30c0999.jpg",
+    bannerUrl: "https://i.pinimg.com/736x/59/1f/24/591f24da674c3a608a6e6aab23d3e4ed.jpg",
+    profileUrl: "https://media.discordapp.net/attachments/1400167107915812918/1408907812293050470/22c9f9637ae670ca2668c8e88a5434ba.webp",
+    name: "& 치치",
+    tags: [
+      { text:"치린이집", color:"tag-blue" },
+      { text:"부관리자", color:"tag-yellow" },
+      { text:"보안팀",  color:"tag-pink" }
+    ],
+    buttons: [
+      { label:"신고문의",   url:"https://discord.com" },
+      { label:"인스타그램", url:"https://curiouscat.live" },
+      { label:"디스코드",   url:"https://dribbble.com" }
+    ]
+  };
+
+  // --------- helpers ----------
+  const $ = (s, el=document)=> el.querySelector(s);
+  const $$ = (s, el=document)=> [...el.querySelectorAll(s)];
+  const isSafeUrl = u => /^https?:\/\//i.test(u||"");
+
+  const LS_KEY = "panelConfig.v2"; // bump schema
+  const USER_KEY = (email)=> `user:${email.toLowerCase()}`;
+
+  function encodeCfg(cfg){ return btoa(unescape(encodeURIComponent(JSON.stringify(cfg)))) }
+  function decodeCfg(s){ try{ return JSON.parse(decodeURIComponent(escape(atob(s)))) }catch(e){ return null } }
+
+  function saveLocal(cfg){ localStorage.setItem(LS_KEY, JSON.stringify(cfg)) }
+  function loadLocal(){
+    const url = new URL(location.href);
+    const c = url.searchParams.get("c");
+    if(c){ const d = decodeCfg(c); if(d) return d; }
+    try{ const raw = localStorage.getItem(LS_KEY); if(raw) return JSON.parse(raw) }catch(e){}
+    return structuredClone(DEFAULTS);
+  }
+
+  // cookies (simple)
+  function setCookie(name, value, days=7){
+    const d = new Date(); d.setTime(d.getTime()+days*24*60*60*1000);
+    document.cookie = `${name}=${encodeURIComponent(value)}; expires=${d.toUTCString()}; path=/; samesite=Lax`;
+  }
+  function getCookie(name){
+    return document.cookie.split("; ").reduce((acc, c)=>{
+      const [k, v] = c.split("="); return k===name ? decodeURIComponent(v) : acc;
+    }, "");
+  }
+  function eraseCookie(name){ document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/` }
+
+  // sha256 with SubtleCrypto
+  async function sha256(str){
+    if(window.crypto?.subtle){
+      const buf = new TextEncoder().encode(str);
+      const hash = await crypto.subtle.digest("SHA-256", buf);
+      return [...new Uint8Array(hash)].map(b=>b.toString(16).padStart(2,"0")).join("");
+    }
+    // fallback (NOT secure)
+    return str.split("").reduce((a,c)=>((a<<5)-a)+c.charCodeAt(0),0).toString(16);
+  }
+
+  function getUser(email){
+    try{ const raw = localStorage.getItem(USER_KEY(email)); return raw? JSON.parse(raw): null }catch(e){ return null }
+  }
+  function setUser(email, data){
+    localStorage.setItem(USER_KEY(email), JSON.stringify(data));
+  }
+
+
+  // --- color helpers (minimal) ---
+  const HEX_RE = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
+  const RGB_RE = /^rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}(?:\s*,\s*(0|1|0?\.\d+))?\s*\)$/i;
+  function isCssColor(v){ return HEX_RE.test(v||"") || RGB_RE.test(v||""); }
+  function hexToRgb(hex){
+    let h = hex.slice(1); if(h.length===3){ h = h.split('').map(c=>c+c).join(''); }
+    const n = parseInt(h,16); return { r:(n>>16)&255, g:(n>>8)&255, b:n&255 };
+  }
+  function rgbStringToRgb(s){
+    const m = s.replace(/[rgba()\s]/g,'').split(',').map(Number);
+    return { r:m[0], g:m[1], b:m[2], a:(m[3]!==undefined? m[3]:1) };
+  }
+  function getContrastTextColor(color){
+    let r,g,b;
+    if(HEX_RE.test(color)){ ({r,g,b} = hexToRgb(color)); }
+    else if(RGB_RE.test(color)){ ({r,g,b} = rgbStringToRgb(color)); }
+    else { return '#111'; }
+    const toLin = v=>{ v/=255; return v<=0.03928? v/12.92 : Math.pow((v+0.055)/1.055, 2.4); };
+    const L = 0.2126*toLin(r) + 0.7152*toLin(g) + 0.0722*toLin(b);
+    return L > 0.6 ? '#111' : '#fff';
+  }
+  // --------- 렌더러 ----------
+  function render(cfg){
+    // 타이틀/로딩문구
+    document.title = cfg.pageTitle || cfg.name || document.title;
+    $("#loadingText").textContent = cfg.loadingText || DEFAULTS.loadingText;
+    // 배경/배너
+    document.body.style.backgroundImage = `url("${cfg.backgroundUrl}")`;
+    $(".card-top").style.backgroundImage = `
+      linear-gradient(135deg, rgba(127,90,240,.2), rgba(255,128,191,.2)),
+      url("${cfg.bannerUrl}")
+    `;
+    // 프로필/이름
+    $("#profileImg").src = cfg.profileUrl || "";
+    $("#displayName").textContent = cfg.name || "";
+    // 태그
+    const tw = $("#tagsWrap"); tw.innerHTML = "";
+    (cfg.tags||[]).forEach(t=>{
+      const d = document.createElement("div");
+      d.className = "tag";
+      if (isCssColor(t.color)) {
+        d.style.background = t.color;
+        d.style.color = getContrastTextColor(t.color);
+      } else {
+        d.className = `tag ${t.color||"tag-gray"}`;
+      }
+      d.textContent = t.text||"";
+      tw.appendChild(d);
+    });
+    // 버튼
+    const bw = $("#buttonsWrap"); bw.innerHTML = "";
+    (cfg.buttons||[]).forEach(b=>{
+      if(!b.label || !isSafeUrl(b.url)) return;
+      const a = document.createElement("a");
+      a.className="btn"; a.target="_blank"; a.rel="noopener";
+      a.textContent = b.label; a.href = b.url; bw.appendChild(a);
+    });
+  }
+
+  // --------- 설정 폼 바인딩 ----------
+  const panel = $("#settingsPanel");
+  const toggleBtn = $("#settingsToggle");
+  const authToggle = $("#authToggle");
+  const sessionPill = $("#sessionPill");
+
+  const titleInput = $("#titleInput");
+  const loadingMsgInput = $("#loadingMsgInput");
+  const nameInput = $("#nameInput");
+  const bgInput = $("#bgInput");
+  const bannerInput = $("#bannerInput");
+  const profileInput = $("#profileInput");
+  const tagsList = $("#tagsList");
+  const linksList = $("#linksList");
+
+  function openPanel(o=true){ panel.classList.toggle("open", o) }
+  toggleBtn.addEventListener("click", ()=> openPanel(!panel.classList.contains("open")));
+
+  function addTagRow(tag={text:"", color:"tag-gray"}){
+    const tpl = $("#tagTpl").content.cloneNode(true);
+    const row = tpl.querySelector(".tag-item");
+    row.querySelector(".tag-text").value = tag.text||"";
+    if (isCssColor(tag.color)) {
+    row.querySelector(".tag-color-code").value = tag.color;
+    row.querySelector(".tag-color").value = "tag-gray";
+  } else {
+    row.querySelector(".tag-color").value = tag.color||"tag-gray";
+  }
+    row.querySelector(".tag-del").addEventListener("click", ()=> row.remove());
+    tagsList.appendChild(tpl);
+  }
+  function addLinkRow(link={label:"", url:""}){
+    const tpl = $("#linkTpl").content.cloneNode(true);
+    const row = tpl.querySelector(".link-item");
+    row.querySelector(".link-label").value = link.label||"";
+    row.querySelector(".link-url").value = link.url||"";
+    row.querySelector(".link-del").addEventListener("click", ()=> row.remove());
+    linksList.appendChild(tpl);
+  }
+  function fillForm(from){
+    titleInput.value = from.pageTitle||"";
+    loadingMsgInput.value = from.loadingText||"";
+    nameInput.value = from.name||"";
+    bgInput.value = from.backgroundUrl||"";
+    bannerInput.value = from.bannerUrl||"";
+    profileInput.value = from.profileUrl||"";
+    tagsList.innerHTML = ""; (from.tags||[]).forEach(addTagRow);
+    linksList.innerHTML = ""; (from.buttons||[]).forEach(addLinkRow);
+  }
+  function collectForm(){
+    const tags = $$(".tag-item", tagsList).map(el=>({
+      text: $(".tag-text", el).value.trim(),
+      color: ($(".tag-color-code", el)?.value.trim()) || $(".tag-color", el).value || "tag-gray"
+    })).filter(t=>t.text);
+    const buttons = $$(".link-item", linksList).map(el=>({
+      label: $(".link-label", el).value.trim(),
+      url: $(".link-url", el).value.trim()
+    })).filter(b=> b.label && isSafeUrl(b.url));
+    return {
+      pageTitle: titleInput.value.trim() || nameInput.value.trim() || DEFAULTS.pageTitle,
+      loadingText: loadingMsgInput.value.trim() || DEFAULTS.loadingText,
+      backgroundUrl: bgInput.value.trim() || DEFAULTS.backgroundUrl,
+      bannerUrl: bannerInput.value.trim() || DEFAULTS.bannerUrl,
+      profileUrl: profileInput.value.trim() || DEFAULTS.profileUrl,
+      name: nameInput.value.trim() || DEFAULTS.name,
+      tags, buttons
+    };
+  }
+
+  $("#addTagBtn").addEventListener("click", ()=> addTagRow());
+  $("#addLinkBtn").addEventListener("click", ()=> addLinkRow());
+
+  $("#previewBtn").addEventListener("click", ()=> { const c=collectForm(); render(c); });
+  $("#saveBtn").addEventListener("click", ()=>{
+    const c=collectForm(); saveLocal(c); render(c);
+    if(currentUser){ saveToAccount(currentUser, c); }
+    alert("저장되었습니다.");
+    openPanel(false);
+  });
+  $("#resetBtn").addEventListener("click", ()=>{
+    if(confirm("모든 설정을 기본값으로 되돌릴까요?")){
+      saveLocal(DEFAULTS); fillForm(DEFAULTS); render(DEFAULTS);
+      alert("초기화했습니다.");
+    }
+  });
+  $("#exportBtn").addEventListener("click", ()=>{
+    const blob = new Blob([JSON.stringify(collectForm(),null,2)], {type:"application/json"});
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download="panel-config.json"; a.click();
+    URL.revokeObjectURL(a.href);
+  });
+  $("#importBtn").addEventListener("click", ()=>{
+    const inp = document.createElement("input"); inp.type="file"; inp.accept="application/json";
+    inp.onchange = ()=>{
+      const f = inp.files[0]; if(!f) return;
+      const r = new FileReader();
+      r.onload = ()=>{
+        try{
+          const c = JSON.parse(r.result);
+          fillForm(c); render(c); alert("가져오기 완료. 저장을 눌러 반영하세요.");
+        }catch{ alert("잘못된 JSON 파일입니다."); }
+      };
+      r.readAsText(f);
+    };
+    inp.click();
+  });
+  $("#shareLinkBtn").addEventListener("click", ()=>{
+    const encoded = encodeCfg(collectForm());
+    const url = new URL(location.href); url.searchParams.set("c", encoded);
+    navigator.clipboard?.writeText(url.toString());
+    prompt("공유 링크를 복사해가세요:", url.toString());
+  });
+
+  // 계정 저장/불러오기(로그인 필요)
+  $("#saveToAccountBtn").addEventListener("click", ()=>{
+    if(!currentUser) return alert("먼저 로그인하세요.");
+    const c = collectForm(); saveToAccount(currentUser, c);
+    alert("계정에 저장했습니다. (이 브라우저의 localStorage에 보관)");
+  });
+  $("#loadFromAccountBtn").addEventListener("click", ()=>{
+    if(!currentUser) return alert("먼저 로그인하세요.");
+    const data = getUser(currentUser);
+    if(data?.config){ fillForm(data.config); render(data.config); alert("계정 설정을 불러왔습니다."); }
+    else alert("계정에 저장된 설정이 없습니다.");
+  });
+
+  // --------- 인증(쿠키 기반 세션) ----------
+  let currentUser = null;
+  const authModal = $("#authModal");
+  const authEmail = $("#authEmail");
+  const authPw = $("#authPw");
+  const loginBtn = $("#loginBtn");
+  const logoutBtn = $("#logoutBtn");
+  const authClose = $("#authClose");
+
+  function openAuth(o=true){ authModal.classList.toggle("open", o); if(o){ authEmail.focus(); } }
+  authToggle.addEventListener("click", ()=>{
+    if(currentUser){ // 이미 로그인 → 빠르게 로그아웃 선택 가능
+      openAuth(true);
+      $("#authTitle").textContent = "계정 정보";
+      authEmail.value = currentUser;
+      authEmail.disabled = true;
+      authPw.value = "";
+      logoutBtn.style.display = "";
+      loginBtn.textContent = "비밀번호 변경 / 재로그인";
+    } else {
+      $("#authTitle").textContent = "로그인 / 회원가입";
+      authEmail.value = "";
+      authEmail.disabled = false;
+      authPw.value = "";
+      logoutBtn.style.display = "none";
+      loginBtn.textContent = "로그인";
+      openAuth(true);
+    }
+  });
+  authClose.addEventListener("click", ()=> openAuth(false));
+
+  logoutBtn.addEventListener("click", ()=>{
+    if(!currentUser) return;
+    eraseCookie("sessionEmail");
+    currentUser = null;
+    sessionPill.style.display = "none";
+    alert("로그아웃했습니다.");
+    openAuth(false);
+  });
+
+  loginBtn.addEventListener("click", async ()=>{
+    const email = authEmail.value.trim().toLowerCase();
+    const pw = authPw.value;
+    if(!email || !pw){ return alert("이메일과 비밀번호를 입력하세요."); }
+    const hash = await sha256(pw);
+    const u = getUser(email);
+    if(!u){
+      // signup
+      setUser(email, { email, hash, createdAt: Date.now(), config: collectForm() });
+      setCookie("sessionEmail", email, 7);
+      currentUser = email;
+      sessionPill.textContent = `로그인: ${email}`;
+      sessionPill.style.display = "";
+      alert("계정을 생성하고 로그인했습니다.");
+      openAuth(false);
+    }else{
+      if(u.hash !== hash){
+        if(confirm("비밀번호가 다릅니다. 이 비밀번호로 변경할까요?")){
+          u.hash = hash; setUser(email, u);
+          alert("비밀번호를 변경했습니다.");
+        }else{
+          return;
+        }
+      }
+      setCookie("sessionEmail", email, 7);
+      currentUser = email;
+      sessionPill.textContent = `로그인: ${email}`;
+      sessionPill.style.display = "";
+      // 계정 설정 불러오기 옵션 제공
+      if(u.config){
+        if(confirm("계정에 저장한 설정을 불러올까요?")){
+          fillForm(u.config); render(u.config); saveLocal(u.config);
+        }
+      }
+      openAuth(false);
+    }
+  });
+
+  function saveToAccount(email, cfg){
+    const u = getUser(email) || { email, hash:"", createdAt:Date.now() };
+    u.config = cfg;
+    setUser(email, u);
+  }
+
+  // --------- 초기 로드 ----------
+  const cfg = loadLocal();
+  window.addEventListener("load", ()=>{
+    setTimeout(()=>{
+      $("#loading").style.display="none";
+      $("#content").style.display="block";
+    }, 1200);
+  });
+  fillForm(cfg); render(cfg);
+
+  // ?edit=1 → 설정 자동 오픈
+  if(new URL(location.href).searchParams.get("edit")==="1"){ openPanel(true); }
+
+  // 세션 복원
+  const sess = getCookie("sessionEmail");
+  if(sess){
+    currentUser = sess;
+    sessionPill.textContent = `로그인: ${sess}`;
+    sessionPill.style.display = "";
+  }
+  </script>
+</body>
+</html>
