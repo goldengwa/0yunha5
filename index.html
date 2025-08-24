@@ -448,7 +448,23 @@
   const linksList = $("#linksList");
 
   function openPanel(o=true){ panel.classList.toggle("open", o) }
-  toggleBtn.addEventListener("click", ()=> openPanel(!panel.classList.contains("open")));
+toggleBtn.addEventListener("click", ()=>{
+  // 로그인 필요: 미로그인 시 안내 후 로그인 모달 열기
+  if (!currentUser) {
+    alert("패널을 열기 전에 로그인 또는 회원가입이 필요합니다.");
+    // 로그인 모드로 모달 초기화
+    $("#authTitle").textContent = "로그인 / 회원가입";
+    authEmail.value = "";
+    authEmail.disabled = false;
+    authPw.value = "";
+    logoutBtn.style.display = "none";
+    loginBtn.textContent = "로그인";
+    openAuth(true);  // 로그인 모달 열기
+    return;
+  }
+  // 로그인 상태면 기존처럼 패널 토글
+  openPanel(!panel.classList.contains("open"));
+});
 
   function addTagRow(tag={text:"", color:"tag-gray"}){
     const tpl = $("#tagTpl").content.cloneNode(true);
