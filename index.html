@@ -206,8 +206,8 @@
             <input id="loadingDotInput" type="text" placeholder="예: #5865F2 또는 rgb(88,101,242)"/>
           </div>
           <div>
-            <label>태그 그림자 색 (CSS Color)</label>
-            <input id="tagShadowInput" type="text" placeholder="예: rgba(0,0,0,0.18)"/>
+            <label>안내</label>
+            <div class="note">색 코드는 HEX, rgb(), rgba() 등 CSS 색상 표기 모두 가능해요.</div>
           </div>
         </div>
 <div class="hr"></div>
@@ -258,11 +258,6 @@
           <label>텍스트</label>
           <input type="text" class="tag-text" placeholder="예: 치린이집"/>
         </div>
-      <div class="row">
-        <label>태그 그림자 색 (선택) — 비우면 태그 색과 동일</label>
-        <input type="text" class="tag-shadow-code" placeholder="예: rgba(0,0,0,0.18) 또는 #c7d2fe"/>
-      </div>
-
         <div>
           <label>색상</label>
           <select class="tag-color">
@@ -277,6 +272,10 @@
       <div class="row">
         <label>색상 코드 (선택) — HEX 또는 rgb/rgba</label>
         <input type="text" class="tag-color-code" placeholder="#ff5577 또는 rgb(255,85,119)"/>
+      </div>
+          <div class="row">
+        <label>태그 그림자 색 (선택) — 비우면 태그 색과 동일</label>
+        <input type="text" class="tag-shadow-code" placeholder="예: rgba(0,0,0,0.18) 또는 #c7d2fe"/>
       </div>
     </div>
   </template>
@@ -332,6 +331,8 @@
     bannerUrl: "https://img.freepik.com/premium-photo/abstract-background-design-hd-olive-green-color_851755-74064.jpg?semt=ais_hybrid&w=740&q=80",
     profileUrl: "https://img.freepik.com/premium-photo/abstract-background-design-hd-olive-green-color_851755-74064.jpg?semt=ais_hybrid&w=740&q=80",
     name: "마이네임",
+    loadingBg: "rgba(239,244,255,0.9)",
+    loadingDot: "#5865F2",
     tags: [
       { text:"마이네임이즈", color:"tag-blue" },
       { text:"소개페이지", color:"tag-yellow" },
@@ -414,45 +415,13 @@
     const L = 0.2126*toLin(r) + 0.7152*toLin(g) + 0.0722*toLin(b);
     return L > 0.6 ? '#111' : '#fff';
   }
-  
-  // --- Personalized link helpers ---
-  function getHandleFromSession(){
-    const sess = (window.currentUser || getCookie?.("sessionEmail") || "").toString();
-    return sess.includes("@") ? sess.split("@")[0] : (sess || "");
-  }
-  function getBaseSuffix(host){
-    // Try to use the last two labels (example.com). For multi-part TLDs, set PUBLIC_ROOT manually.
-    if (window.PUBLIC_ROOT) return window.PUBLIC_ROOT; // e.g., "example.co.kr"
-    const parts = (host||"").split(".");
-    if (parts.length >= 2) return parts.slice(-2).join(".");
-    return host;
-  }
-  function buildPersonalLink(cfg){
-    const handle = getHandleFromSession();
-    const suffix = getBaseSuffix(location.hostname);
-    const encoded = encodeCfg(cfg);
-    try {
-      const url = new URL(location.href);
-      if (handle){
-        url.hostname = `${handle}.mynameis.${suffix}`;
-      }
-      url.searchParams.set("c", encoded);
-      url.searchParams.delete("u");
-      return url.toString();
-    } catch(e){
-      // Fallback to current host with u=handle
-      const url = new URL(location.href);
-      url.searchParams.set("c", encoded);
-      if (handle) url.searchParams.set("u", handle);
-      return url.toString();
-    }
-  }
-// --------- 렌더러 ----------
+  // --------- 렌더러 ----------
   function render(cfg){
-      const PRESET_COLORS = { "tag-blue":"#c7d2fe", "tag-yellow":"#fde68a", "tag-pink":"#fd8a8a", "tag-gray":"#e5e7eb" };
+    const PRESET_COLORS = { "tag-blue":"#c7d2fe", "tag-yellow":"#fde68a", "tag-pink":"#fd8a8a", "tag-gray":"#e5e7eb" };
     // 타이틀/로딩문구
     document.title = cfg.pageTitle || cfg.name || document.title;
-      const _loading = document.getElementById("loading"); if (_loading && cfg.loadingBg) _loading.style.background = cfg.loadingBg;
+    const _loadingEl = document.getElementById("loading"); if (_loadingEl && cfg.loadingBg) { _loadingEl.style.background = cfg.loadingBg; }
+    try{ document.querySelectorAll(".dot-loader span").forEach(s=>{ if(cfg.loadingDot) s.style.background = cfg.loadingDot; }); }catch(e){}
     $("#loadingText").textContent = cfg.loadingText || DEFAULTS.loadingText;
     // 배경/배너
     document.body.style.backgroundImage = `url("${cfg.backgroundUrl}")`;
@@ -552,6 +521,8 @@ toggleBtn.addEventListener("click", ()=>{
     bgInput.value = from.backgroundUrl||"";
     bannerInput.value = from.bannerUrl||"";
     profileInput.value = from.profileUrl||"";
+    if (loadingBgInput) loadingBgInput.value = from.loadingBg || "rgba(239,244,255,0.9)";
+    if (loadingDotInput) loadingDotInput.value = from.loadingDot || "#5865F2";
     tagsList.innerHTML = ""; (from.tags||[]).forEach(addTagRow);
     linksList.innerHTML = ""; (from.buttons||[]).forEach(addLinkRow);
   }
@@ -736,22 +707,5 @@ toggleBtn.addEventListener("click", ()=>{
     sessionPill.style.display = "";
   }
   </script>
-<script>
-
-      // Show personalized copy button if handle available
-      try{
-        const handle = getHandleFromSession();
-        const btn = document.getElementById("copyPublicUrlBtn");
-        if (btn){
-          if (handle){ btn.style.display = ""; }
-          btn.addEventListener("click", ()=>{
-            const out = buildPersonalLink(collectForm());
-            navigator.clipboard?.writeText(out);
-            alert("개인 맞춤 링크를 복사했습니다:\n" + out);
-          });
-        }
-      }catch(e){}
-
-</script>
 </body>
 </html>
