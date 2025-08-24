@@ -258,6 +258,11 @@
           <label>텍스트</label>
           <input type="text" class="tag-text" placeholder="예: 치린이집"/>
         </div>
+      <div class="row">
+        <label>태그 그림자 색 (선택) — 비우면 태그 색과 동일</label>
+        <input type="text" class="tag-shadow-code" placeholder="예: rgba(0,0,0,0.18) 또는 #c7d2fe"/>
+      </div>
+
         <div>
           <label>색상</label>
           <select class="tag-color">
@@ -444,6 +449,7 @@
   }
 // --------- 렌더러 ----------
   function render(cfg){
+      const PRESET_COLORS = { "tag-blue":"#c7d2fe", "tag-yellow":"#fde68a", "tag-pink":"#fd8a8a", "tag-gray":"#e5e7eb" };
     // 타이틀/로딩문구
     document.title = cfg.pageTitle || cfg.name || document.title;
       const _loading = document.getElementById("loading"); if (_loading && cfg.loadingBg) _loading.style.background = cfg.loadingBg;
