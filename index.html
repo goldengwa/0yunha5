@@ -142,7 +142,7 @@
       <img id="profileImg" src="https://img.freepik.com/premium-photo/abstract-background-design-hd-olive-green-color_851755-74064.jpg?semt=ais_hybrid&w=740&q=80" alt="프로필"/>
     </div>
     <div class="card-bottom">
-      <h1 id="displayName">MyNameis</h1>
+      <h1 id="displayName">마이 네임</h1>
       <div class="tags" id="tagsWrap"></div>
       <div class="buttons" id="buttonsWrap"></div>
     </div>
@@ -195,7 +195,22 @@
           <input id="profileInput" type="url" placeholder="https://..."/>
         </div>
 
-        <div class="hr"></div>
+        
+        <div class="row-3">
+          <div>
+            <label>로딩 배경 색 (CSS Color)</label>
+            <input id="loadingBgInput" type="text" placeholder="예: rgba(239,244,255,0.9) 또는 #eff4ffcc"/>
+          </div>
+          <div>
+            <label>로딩 공 색 (CSS Color)</label>
+            <input id="loadingDotInput" type="text" placeholder="예: #5865F2 또는 rgb(88,101,242)"/>
+          </div>
+          <div>
+            <label>태그 그림자 색 (CSS Color)</label>
+            <input id="tagShadowInput" type="text" placeholder="예: rgba(0,0,0,0.18)"/>
+          </div>
+        </div>
+<div class="hr"></div>
 
         <div class="row">
           <label>태그</label>
@@ -311,7 +326,7 @@
     backgroundUrl: "https://img.freepik.com/premium-photo/abstract-background-design-hd-olive-green-color_851755-74064.jpg?semt=ais_hybrid&w=740&q=80",
     bannerUrl: "https://img.freepik.com/premium-photo/abstract-background-design-hd-olive-green-color_851755-74064.jpg?semt=ais_hybrid&w=740&q=80",
     profileUrl: "https://img.freepik.com/premium-photo/abstract-background-design-hd-olive-green-color_851755-74064.jpg?semt=ais_hybrid&w=740&q=80",
-    name: "MyNameis",
+    name: "마이네임",
     tags: [
       { text:"마이네임이즈", color:"tag-blue" },
       { text:"소개페이지", color:"tag-yellow" },
@@ -394,10 +409,44 @@
     const L = 0.2126*toLin(r) + 0.7152*toLin(g) + 0.0722*toLin(b);
     return L > 0.6 ? '#111' : '#fff';
   }
-  // --------- 렌더러 ----------
+  
+  // --- Personalized link helpers ---
+  function getHandleFromSession(){
+    const sess = (window.currentUser || getCookie?.("sessionEmail") || "").toString();
+    return sess.includes("@") ? sess.split("@")[0] : (sess || "");
+  }
+  function getBaseSuffix(host){
+    // Try to use the last two labels (example.com). For multi-part TLDs, set PUBLIC_ROOT manually.
+    if (window.PUBLIC_ROOT) return window.PUBLIC_ROOT; // e.g., "example.co.kr"
+    const parts = (host||"").split(".");
+    if (parts.length >= 2) return parts.slice(-2).join(".");
+    return host;
+  }
+  function buildPersonalLink(cfg){
+    const handle = getHandleFromSession();
+    const suffix = getBaseSuffix(location.hostname);
+    const encoded = encodeCfg(cfg);
+    try {
+      const url = new URL(location.href);
+      if (handle){
+        url.hostname = `${handle}.mynameis.${suffix}`;
+      }
+      url.searchParams.set("c", encoded);
+      url.searchParams.delete("u");
+      return url.toString();
+    } catch(e){
+      // Fallback to current host with u=handle
+      const url = new URL(location.href);
+      url.searchParams.set("c", encoded);
+      if (handle) url.searchParams.set("u", handle);
+      return url.toString();
+    }
+  }
+// --------- 렌더러 ----------
   function render(cfg){
     // 타이틀/로딩문구
     document.title = cfg.pageTitle || cfg.name || document.title;
+      const _loading = document.getElementById("loading"); if (_loading && cfg.loadingBg) _loading.style.background = cfg.loadingBg;
     $("#loadingText").textContent = cfg.loadingText || DEFAULTS.loadingText;
     // 배경/배너
     document.body.style.backgroundImage = `url("${cfg.backgroundUrl}")`;
@@ -681,5 +730,22 @@ toggleBtn.addEventListener("click", ()=>{
     sessionPill.style.display = "";
   }
   </script>
+<script>
+
+      // Show personalized copy button if handle available
+      try{
+        const handle = getHandleFromSession();
+        const btn = document.getElementById("copyPublicUrlBtn");
+        if (btn){
+          if (handle){ btn.style.display = ""; }
+          btn.addEventListener("click", ()=>{
+            const out = buildPersonalLink(collectForm());
+            navigator.clipboard?.writeText(out);
+            alert("개인 맞춤 링크를 복사했습니다:\n" + out);
+          });
+        }
+      }catch(e){}
+
+</script>
 </body>
 </html>
