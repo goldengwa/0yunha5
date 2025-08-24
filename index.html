@@ -356,12 +356,31 @@
 
   function saveLocal(cfg){ localStorage.setItem(LS_KEY, JSON.stringify(cfg)) }
   function loadLocal(){
-    const url = new URL(location.href);
-    const c = url.searchParams.get("c");
-    if(c){ const d = decodeCfg(c); if(d) return d; }
-    try{ const raw = localStorage.getItem(LS_KEY); if(raw) return JSON.parse(raw) }catch(e){}
-    return structuredClone(DEFAULTS);
+  const url = new URL(location.href);
+  const c = url.searchParams.get("c");
+  if(c){
+    const d = decodeCfg(c);
+    if (d){
+      try{
+        const raw = localStorage.getItem(LS_KEY);
+        if (raw){
+          const loc = JSON.parse(raw);
+          if (loc.loadingBg && !d.loadingBg) d.loadingBg = loc.loadingBg;
+          if (loc.loadingDot && !d.loadingDot) d.loadingDot = loc.loadingDot;
+          if (Array.isArray(d.tags) && Array.isArray(loc.tags)){
+            d.tags = d.tags.map((t,i)=>{
+              const sc = t?.shadowColor || loc.tags[i]?.shadowColor || "";
+              return sc ? {...t, shadowColor: sc} : t;
+            });
+          }
+        }
+      }catch(e){}
+      return d;
+    }
   }
+  try{ const raw = localStorage.getItem(LS_KEY); if(raw) return JSON.parse(raw) }catch(e){}
+  return structuredClone(DEFAULTS);
+}
 
   // cookies (simple)
   function setCookie(name, value, days=7){
