@@ -196,7 +196,7 @@
           <input id="profileInput" type="url" placeholder="https://..."/>
         </div>
 
-        <!-- ✨ 추가: 로딩 색상 설정 -->
+        
         <div class="row-2">
           <div>
             <label>로딩 배경 색 (CSS Color)</label>
@@ -270,7 +270,7 @@
         <label>색상 코드 (선택) — HEX 또는 rgb/rgba</label>
         <input type="text" class="tag-color-code" placeholder="#ff5577 또는 rgb(255,85,119)"/>
       </div>
-      <!-- ✨ 추가: 태그 그림자 색 -->
+      
       <div class="row">
         <label>태그 그림자 색 (선택) — 비우면 태그 색과 동일</label>
         <input type="text" class="tag-shadow-code" placeholder="예: rgba(0,0,0,0.18) 또는 #c7d2fe"/>
@@ -329,7 +329,7 @@
     bannerUrl: "https://img.freepik.com/premium-photo/abstract-background-design-hd-olive-green-color_851755-74064.jpg?semt=ais_hybrid&w=740&q=80",
     profileUrl: "https://img.freepik.com/premium-photo/abstract-background-design-hd-olive-green-color_851755-74064.jpg?semt=ais_hybrid&w=740&q=80",
     name: "마이네임",
-    /* ✨ 추가: 로딩 배경/도트 기본값 */
+    /* 로딩 배경/도트 기본값 */
     loadingBg: "rgba(239,244,255,0.9)",
     loadingDot: "#5865F2",
     tags: [
@@ -419,7 +419,7 @@
     document.title = cfg.pageTitle || cfg.name || document.title;
     $("#loadingText").textContent = cfg.loadingText || DEFAULTS.loadingText;
 
-    // ✨ 로딩 배경/도트 색 적용
+    // 로딩 배경/도트 색 적용
     if (cfg.loadingBg)  { const L = $("#loading"); if (L) L.style.background = cfg.loadingBg; }
     if (cfg.loadingDot) { document.querySelectorAll(".dot-loader span").forEach(s=> s.style.background = cfg.loadingDot); }
 
@@ -454,7 +454,7 @@
       // 텍스트
       d.textContent = t.text||"";
 
-      // ✨ 그림자색: 지정값이 유효하면 사용, 아니면 배경색과 동일
+      //  그림자색: 지정값이 유효하면 사용, 아니면 배경색과 동일
       const sColor = (t.shadowColor && isCssColor(t.shadowColor)) ? t.shadowColor : bgColor;
       d.style.boxShadow = `0 8px 18px ${sColor}`;
 
@@ -484,7 +484,7 @@
   const bannerInput = $("#bannerInput");
   const profileInput = $("#profileInput");
 
-  /* ✨ 추가 입력 요소 */
+  /* 추가 입력 요소 */
   const loadingBgInput = $("#loadingBgInput");
   const loadingDotInput = $("#loadingDotInput");
 
@@ -523,7 +523,7 @@
     } else {
       row.querySelector(".tag-color").value = tag.color||"tag-gray";
     }
-    // ✨ 그림자색 복원
+    // 그림자색 복원
     if (tag.shadowColor){ const sc = row.querySelector(".tag-shadow-code"); if (sc) sc.value = tag.shadowColor; }
     row.querySelector(".tag-del").addEventListener("click", ()=> row.remove());
     tagsList.appendChild(tpl);
@@ -543,7 +543,7 @@
     bgInput.value = from.backgroundUrl||"";
     bannerInput.value = from.bannerUrl||"";
     profileInput.value = from.profileUrl||"";
-    /* ✨ 로딩 색상 복원 */
+    /* 로딩 색상 복원 */
     loadingBgInput.value  = from.loadingBg  || DEFAULTS.loadingBg;
     loadingDotInput.value = from.loadingDot || DEFAULTS.loadingDot;
 
@@ -554,7 +554,7 @@
     const tags = $$(".tag-item", tagsList).map(el=>({
       text: $(".tag-text", el).value.trim(),
       color: ($(".tag-color-code", el)?.value.trim()) || $(".tag-color", el).value || "tag-gray",
-      /* ✨ per-tag shadowColor (비우면 "") */
+      /*  per-tag shadowColor (비우면 "") */
       shadowColor: $(".tag-shadow-code", el)?.value.trim() || ""
     })).filter(t=>t.text);
     const buttons = $$(".link-item", linksList).map(el=>({
@@ -568,7 +568,7 @@
       bannerUrl: bannerInput.value.trim() || DEFAULTS.bannerUrl,
       profileUrl: profileInput.value.trim() || DEFAULTS.profileUrl,
       name: nameInput.value.trim() || DEFAULTS.name,
-      /* ✨ 로딩 색상 수집 */
+      /* 로딩 색상 수집 */
       loadingBg:  loadingBgInput.value.trim()  || DEFAULTS.loadingBg,
       loadingDot: loadingDotInput.value.trim() || DEFAULTS.loadingDot,
       tags, buttons
@@ -580,7 +580,7 @@
 
   $("#previewBtn").addEventListener("click", ()=> { const c=collectForm(); render(c); });
 
-  // ✨ 저장 시 URL ?c=도 최신값으로 갱신 → 새로고침해도 색 유지
+  // 저장 시 URL ?c=도 최신값으로 갱신 → 새로고침해도 색 유지
   $("#saveBtn").addEventListener("click", ()=>{
     const c=collectForm(); saveLocal(c); render(c);
     // 주소창의 c 갱신
